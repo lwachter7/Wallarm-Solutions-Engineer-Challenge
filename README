@@ -1,0 +1,12 @@
+Luke Wachter 
+Wallarm Solutions Engineer Challenge
+
+Due to the integrations with Docker in gotestwaf, Wallarm, and httpbin.org I decided to use Docker as the environment
+
+1. Deploy a Wallarm Filtering Node
+
+2️. Set Up a Backend Origin
+
+3️. Generate Traffic Using GoTestWAF
+
+4️. Document Your Process
