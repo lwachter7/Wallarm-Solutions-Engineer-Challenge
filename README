@@ -4,8 +4,21 @@ Wallarm Solutions Engineer Challenge
 Due to the integrations with Docker in gotestwaf, Wallarm, and httpbin.org I decided to use Docker as the environment
 
 1. Deploy a Wallarm Filtering Node
+Following the guide at: https://docs.wallarm.com/installation/inline/compute-instances/docker/nginx-based/
+  a.Get Wallarm token of the appropriate type - I generated an api token with administrator permissions in the Wallarm API portal.
+  b.Run docker container:
+docker run -d -e WALLARM_API_TOKEN='XXXXXXX' -e WALLARM_LABELS='group=<GROUP>' -e NGINX_BACKEND='httpbin.org' -e WALLARM_API_HOST='us1.api.wallarm.com' -p 80:80 wallarm/node:6.0.0
+image was pulled successfully 
 
-2️. Set Up a Backend Origin
+2️. Set Up a Backend Origin - httpbin.org
+Referencing 
+docker pull kennethreitz/httpbin
+docker run -p 80:80 kennethreitz/httpbin
+
+Error - both httpbin.org and the Wallarm containers were trying to use the same local address - 0.0.0.0
+Reconfigured both to use the private addess range 10.0.0.0/24 with httpbin.org container assigned to 10.0.0.1 and Wallarm node assigned to 10.0.0.2
+
+Verified that backend was working by accessing 10.0.0.1 in web browser
 
 3️. Generate Traffic Using GoTestWAF
 
