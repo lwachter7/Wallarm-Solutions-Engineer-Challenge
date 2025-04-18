@@ -1,25 +1,47 @@
 Luke Wachter 
 Wallarm Solutions Engineer Challenge
 
-Due to the integrations with Docker in gotestwaf, Wallarm, and httpbin.org I decided to use Docker as the environment
+Due to the integrations with Docker for gotestwaf, Wallarm, and httpbin.org I decided to use Docker as the environment.
 
 1. Deploy a Wallarm Filtering Node
-Following the guide at: https://docs.wallarm.com/installation/inline/compute-instances/docker/nginx-based/
+I followed the guide at: https://docs.wallarm.com/installation/inline/compute-instances/docker/nginx-based/
   a.Get Wallarm token of the appropriate type - I generated an api token with administrator permissions in the Wallarm API portal.
   b.Run docker container:
-docker run -d -e WALLARM_API_TOKEN='XXXXXXX' -e WALLARM_LABELS='group=<GROUP>' -e NGINX_BACKEND='httpbin.org' -e WALLARM_API_HOST='us1.api.wallarm.com' -p 80:80 wallarm/node:6.0.0
-image was pulled successfully 
+docker run -d -e WALLARM_API_TOKEN='XXXXXXX' -e WALLARM_LABELS='group=<GROUP>' -e NGINX_BACKEND='http://localhost' -e WALLARM_API_HOST='us1.api.wallarm.com' -p 80:80 wallarm/node:6.0.0
 
 2️. Set Up a Backend Origin - httpbin.org
-Referencing 
 docker pull kennethreitz/httpbin
 docker run -p 80:80 kennethreitz/httpbin
 
-Error - both httpbin.org and the Wallarm containers were trying to use the same local address - 0.0.0.0
-Reconfigured both to use the private addess range 10.0.0.0/24 with httpbin.org container assigned to 10.0.0.1 and Wallarm node assigned to 10.0.0.2
+Error - container port assignment of Wallarm node and httpbin.org was the same. Changed wallarm container to port 8080.
 
-Verified that backend was working by accessing 10.0.0.1 in web browser
+Created a network = mynetwork 
+
+Changed NGINX_BACKEND to httpbin container IP 172.18.0.2
+
+Changed run code of wallarm filtering node to docker run --network="mynetwork" -d -e WALLARM_API_TOKEN='XXXX' -e WALLARM_LABELS='group=<GROUP>' -e NGINX_BACKEND='172.18.0.2' -e WALLARM_API_HOST='us1.api.wallarm.com' -p 8080:80 wallarm/node:6.0.0
+
+Verified that backend was working through Wallarm by accessing localhost:8080 in web browser
 
 3️. Generate Traffic Using GoTestWAF
 
-4️. Document Your Process
+docker pull wallarm/gotestwaf
+docker run --network="host" -it -v ${PWD}/reports:/app/reports wallarm/gotestwaf --url=http://localhost:8080
+
+GoTestWAF error="WAF was not detected. Please use the '--blockStatusCodes' or '--blockRegex' flags. Use '--help' for additional info. Baseline attack status code: 200"
+
+Blocked the status code 200: docker run --rm --network="host" -it -v ${PWD}/reports:/app/reports wallarm/gotestwaf --blockStatusCodes 200 --url=http://localhost:8080
+
+This time the report was successful. Since the Wallarm node was set in monitoring only mode, the result was a F.
+
+Re-deploying the wallarm node with blocking active:
+
+docker run --network="mynetwork" -d -e WALLARM_API_TOKEN='XXXXX' -e WALLARM_LABELS='group=<GROUP>' -e NGINX_BACKEND='172.18.0.2' -e WALLARM_API_HOST='us1.api.wallarm.com' -e WALLARM_MODE='block' -p 8080:80 wallarm/node:6.0.0
+
+docker run --rm --network="host" -it -v ${PWD}/reports:/app/reports wallarm/gotestwaf --url=http://localhost:8080
+
+It seems likely that the WAF was responding with error code 200 while in monitoring mode which was causing the error since the --blockStatusCodes command was no longer necessary once blocking mode was enabled.
+
+New result: C
+API security was 100% with the Wallarm solution, but the application itself was not secure with a 50% score.
+Reports are attached to the fork.
