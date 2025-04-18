@@ -43,5 +43,5 @@ docker run --rm --network="host" -it -v ${PWD}/reports:/app/reports wallarm/gote
 It seems likely that the WAF was responding with error code 200 while in monitoring mode which was causing the error since the --blockStatusCodes command was no longer necessary once blocking mode was enabled.
 
 New result: C
-API security was 100% with the Wallarm solution, but the application itself was not secure with a 50% score.
+API security was 100% with the Wallarm solution, but the application security was still low at 50% due to failing on true-negatives.
 Reports are attached to the fork.
